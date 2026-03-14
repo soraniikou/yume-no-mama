@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ゆめうつつ - 夢と現の狭間で</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Shippori Mincho', serif;
+    }
+
+    /* 星空レイヤー */
+    #sky {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 100%, #1a1a2e 0%, #0f0f1a 40%, #050508 100%);
+      z-index: 0;
+    }
+
+    /* 朝焼けオーバーレイ（フェードイン） */
+    #sunrise-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(120, 110, 150, 0) 0%,
+        rgba(90, 95, 140, 0.12) 50%,
+        rgba(70, 80, 130, 0.2) 80%,
+        rgba(60, 70, 120, 0.25) 100%
+      );
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* 夢見ごこちでシーン（写真のように明るい青い空） */
+    #dream-scene {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        #87CEEB 0%,
+        #B0E0E6 30%,
+        #ADD8E6 60%,
+        rgba(180, 200, 230, 0.95) 85%,
+        rgba(200, 210, 240, 0.9) 100%
+      );
+      opacity: 0;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* 星のキャンバス */
+    #stars-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      transition: opacity 8s ease-out;
+    }
+
+    /* 流れ星 */
+    .shooting-star {
+      position: fixed;
+      width: 120px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.9) 0%, transparent 100%);
+      border-radius: 2px;
+      transform-origin: left center;
+      opacity: 0;
+      z-index: 1;
+      box-shadow: 0 0 8px 2px rgba(255,255,255,0.5);
+    }
+
+    /* 天使の羽（ぼかし） */
+    .feather {
+      position: fixed;
+      width: 24px;
+      height: 48px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.8) 50%, rgba(255,255,255,0.4) 100%);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      transform-origin: center bottom;
+      opacity: 0;
+      z-index: 4;
+      filter: blur(4px) drop-shadow(0 2px 4px rgba(0,0,0,0.08));
+      animation: feather-float 4s ease-in-out infinite;
+    }
+    /* 夢を書くときの天使の羽（淡いピンク） */
+    body.dream-writing .feather {
+      background: linear-gradient(135deg, rgba(255,230,240,0.95) 0%, rgba(255,200,220,0.85) 50%, rgba(255,180,200,0.6) 100%);
+    }
+
+    @keyframes feather-float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(5deg); }
+    }
+
+    /* タイトル・テキスト */
+    .title {
+      position: fixed;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      color: rgba(255,255,255,0.9);
+      letter-spacing: 0.3em;
+      z-index: 5;
+      text-shadow: 0 0 20px rgba(255,255,255,0.3);
+      transition: color 30s ease, opacity 10s ease;
+    }
+
+    .dream-text {
+      position: fixed;
+      bottom: 25%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: rgba(80, 100, 140, 0.95);
+      letter-spacing: 0.2em;
+      z-index: 5;
+      opacity: 0;
+      text-shadow: 0 2px 10px rgba(255, 255, 255, 0.5);
+    }
+
+    /* 最後の問いかけ */
+    .final-question {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: rgba(60, 90, 130, 0.95);
+      letter-spacing: 0.15em;
+      z-index: 6;
+      opacity: 0;
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    /* tapして サイン（非表示からスタート、2秒後にfadeIn） */
+    .tap-hint {
+      position: fixed;
+      bottom: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(0.9rem, 2vw, 1.2rem);
+      color: rgba(60, 90, 130, 0.7);
+      letter-spacing: 0.2em;
+      z-index: 6;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .tap-hint.visible {
+      opacity: 1;
+      animation: tap-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes tap-pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    /* 紺色の波紋 */
+    .ripple-container {
+      position: fixed;
+      z-index: 7;
+      pointer-events: none;
+    }
+    .ripple-circle {
+      position: absolute;
+      left: 0;
+      top: 0;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(80, 120, 180, 0.5) 0%,
+        rgba(30, 55, 95, 0.75) 40%,
+        rgba(20, 40, 70, 0.4) 70%,
+        transparent 100%
+      );
+      box-shadow: 0 0 60px 30px rgba(40, 70, 110, 0.4);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .ripple-pink-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 220, 235, 0.5) 0%,
+        rgba(255, 190, 210, 0.6) 40%,
+        rgba(255, 170, 195, 0.4) 70%,
+        transparent 100%
+      );
+      box-shadow: 0 0 60px 30px rgba(255, 180, 200, 0.3);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    /* 波紋の光の中・画面中央の夢入力エリア */
+    .dream-input-wrapper {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 360px;
+      z-index: 8;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    #dream-textarea {
+      position: relative;
+      width: 100%;
+      min-height: 80px;
+      padding: 16px;
+      font-family: 'Shippori Mincho', serif;
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: rgba(255, 255, 255, 1);
+      text-align: center;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: vertical;
+      letter-spacing: 0.1em;
+      line-height: 1.8;
+      pointer-events: none;
+      cursor: default;
+    }
+    #dream-textarea::placeholder {
+      color: rgba(255, 255, 255, 0.8);
+    }
+    #dream-textarea.active {
+      pointer-events: auto;
+      cursor: text;
+    }
+    #dream-textarea.cursor-hidden {
+      caret-color: transparent;
+    }
+    .dream-input-hint {
+      font-family: 'Shippori Mincho', serif;
+      font-size: clamp(0.75rem, 1.8vw, 0.95rem);
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.1em;
+    }
+    #dream-textarea-overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      min-height: 140px;
+      z-index: 9;
+      cursor: text;
+      pointer-events: none;
+    }
+    #dream-textarea-overlay.visible {
+      pointer-events: auto;
+    }
+
+    /* プログレス表示 */
+    .progress-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      z-index: 5;
+      transition: opacity 0.5s ease;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,200,150,0.8));
+      border-radius: 2px;
+      width: 0%;
+      transition: width 1s linear;
+    }
+  </style>
+</head>
+<body>
+  <div id="sky"></div>
+  <div id="sunrise-overlay"></div>
+  <div id="dream-scene"></div>
+  <canvas id="stars-canvas"></canvas>
+
+  <h1 class="title" id="title">夢のなかで</h1>
+  <p class="dream-text" id="dream-text">夢見ごこちで</p>
+  <p class="final-question" id="final-question"></p>
+  <p class="tap-hint" id="tap-hint">tapして</p>
+  <audio id="dream-audio" preload="auto">
+    <source src="3月14日（23-11）.m4a" type="audio/mp4">
+  </audio>
+  <div class="dream-input-wrapper" id="dream-input-wrapper">
+    <textarea id="dream-textarea" placeholder="夢を書いて..."></textarea>
+    <p class="dream-input-hint" id="dream-input-hint">クリックすると夢を書けます</p>
+    <div id="dream-textarea-overlay"></div>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress"></div>
+  </div>
+
+  <script>
+    const DURATION_INTRO = 55;      // 夢のなかで→夢見ごこちでまで
+    const DURATION_FEATHERS = 60;   // 天使の羽が舞い落ちる1分間
+    const DURATION_TOTAL = DURATION_INTRO + DURATION_FEATHERS;
+    let startTime = null;
+    let animationId = null;
+
+    // ========== 星空・星座の描画 ==========
+    const canvas = document.getElementById('stars-canvas');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    const constellations = [
+      { stars: [[0.2, 0.15], [0.25, 0.2], [0.3, 0.18], [0.28, 0.25], [0.22, 0.22]], name: 'オリオン' },
+      { stars: [[0.6, 0.2], [0.65, 0.25], [0.7, 0.22], [0.68, 0.28]], name: 'カシオペア' },
+      { stars: [[0.4, 0.35], [0.45, 0.4], [0.5, 0.38], [0.48, 0.45]], name: '北斗七星' },
+      { stars: [[0.75, 0.4], [0.8, 0.45], [0.85, 0.42]], name: '夏の大三角' },
+    ];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      initStars();
+      drawSky();
+    }
+
+    function initStars() {
+      stars = [];
+      const count = Math.floor((canvas.width * canvas.height) / 800);
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: Math.random() * 1.5 + 0.3,
+          twinkle: Math.random() * Math.PI * 2,
+          speed: 0.02 + Math.random() * 0.03,
+        });
+      }
+    }
+
+    function drawSky() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const t = Date.now() / 1000;
+
+      // ランダムな星
+      stars.forEach(s => {
+        const alpha = 0.4 + 0.6 * (Math.sin(t * s.speed + s.twinkle) * 0.5 + 0.5);
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fill();
+      });
+
+      // 星座（線でつなぐ）
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      constellations.forEach(c => {
+        for (let i = 0; i < c.stars.length - 1; i++) {
+          const [x1, y1] = c.stars[i];
+          const [x2, y2] = c.stars[i + 1];
+          ctx.beginPath();
+          ctx.moveTo(x1 * canvas.width, y1 * canvas.height);
+          ctx.lineTo(x2 * canvas.width, y2 * canvas.height);
+          ctx.stroke();
+        }
+        c.stars.forEach(([x, y]) => {
+          ctx.beginPath();
+          ctx.arc(x * canvas.width, y * canvas.height, 2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
+          ctx.fill();
+        });
+      });
+    }
+
+    // ========== 流れ星 ==========
+    function createShootingStar() {
+      const el = document.createElement('div');
+      el.className = 'shooting-star';
+      const angle = -30 - Math.random() * 20;
+      const startX = Math.random() * 100 - 20;
+      const startY = Math.random() * 40;
+      el.style.left = startX + '%';
+      el.style.top = startY + '%';
+      el.style.transform = `rotate(${angle}deg)`;
+      document.body.appendChild(el);
+
+      el.animate([
+        { opacity: 0 },
+        { opacity: 1 },
+        { opacity: 0, transform: `rotate(${angle}deg) translateX(400px)` }
+      ], { duration: 3600, easing: 'ease-out' }).onfinish = () => el.remove();
+    }
+
+    let shootingStarInterval;
+    function startShootingStars() {
+      createShootingStar();
+      shootingStarInterval = setInterval(createShootingStar, 4000 + Math.random() * 3000);
+    }
+
+    // ========== 天使の羽（1分間ずっと舞い降りる） ==========
+    function createFeather() {
+      const f = document.createElement('div');
+      f.className = 'feather';
+      const startX = 10 + Math.random() * 80;
+      f.style.left = startX + '%';
+      f.style.top = '-60px';
+      f.style.transform = `rotate(${Math.random() * 360}deg)`;
+      f.style.animationDelay = (Math.random() * 2) + 's';
+      document.body.appendChild(f);
+
+      const targetY = 25 + Math.random() * 55;
+      const drift = (Math.random() - 0.5) * 25;
+      const duration = 4000 + Math.random() * 3000;
+      f.animate([
+        { transform: `translate(0, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 },
+        { transform: `translate(${drift}vw, ${targetY}vh) rotate(${(Math.random() - 0.5) * 200}deg)`, opacity: 0.7 }
+      ], { duration, easing: 'ease-out', fill: 'forwards' }).onfinish = () => f.remove();
+    }
+
+    let featherInterval;
+    let featherIntervalMs = 2500;
+    function startFeathers() {
+      createFeather();
+      featherInterval = setInterval(createFeather, featherIntervalMs);
+    }
+    function updateFeatherInterval(newMs) {
+      clearInterval(featherInterval);
+      featherIntervalMs = newMs;
+      featherInterval = setInterval(createFeather, featherIntervalMs);
+    }
+
+    // ========== 1文字ずつ表示 → tapして表示 ==========
+    function showQuestionCharByChar() {
+      const text = 'どんな夢の中で生きたい？';
+      const el = document.getElementById('final-question');
+      const tapHint = document.getElementById('tap-hint');
+      document.getElementById('progress').parentElement.style.opacity = '0';
+      el.style.opacity = '1';
+      el.textContent = '';
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < text.length) {
+          el.textContent += text[i];
+          i++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            tapHint.classList.add('visible');
+          }, 2000);
+          document.body.addEventListener('click', onTapForRipple, { once: true });
+          document.body.addEventListener('touchstart', onTapForRipple, { once: true, passive: false });
+        }
+      }, 350);
+    }
+
+    // ========== タップで紺色の波紋 + 夢入力（1回のみ） ==========
+    let rippleCreated = false;
+    function onTapForRipple(e) {
+      if (rippleCreated) return;
+      rippleCreated = true;
+      if (e.cancelable) e.preventDefault();
+
+      document.getElementById('final-question').style.opacity = '0';
+      document.getElementById('tap-hint').classList.remove('visible');
+      document.body.removeEventListener('click', onTapForRipple);
+      document.body.removeEventListener('touchstart', onTapForRipple);
+      document.body.classList.add('dream-writing');
+
+      const rippleCenterX = window.innerWidth / 2;
+      const rippleCenterY = window.innerHeight / 2;
+
+      const container = document.createElement('div');
+      container.className = 'ripple-container';
+      container.style.left = rippleCenterX + 'px';
+      container.style.top = rippleCenterY + 'px';
+      container.style.width = '0';
+      container.style.height = '0';
+      container.style.pointerEvents = 'none';
+
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple-circle';
+      ripple.style.left = '0';
+      ripple.style.top = '0';
+      ripple.style.width = '0';
+      ripple.style.height = '0';
+
+      const pinkOverlay = document.createElement('div');
+      pinkOverlay.className = 'ripple-pink-overlay';
+      pinkOverlay.style.left = '0';
+      pinkOverlay.style.top = '0';
+
+      container.appendChild(ripple);
+      container.appendChild(pinkOverlay);
+      document.body.appendChild(container);
+
+      const maxSize = Math.min(window.innerWidth, window.innerHeight) * 0.25;
+      ripple.animate([
+        { width: '0', height: '0' },
+        { width: maxSize * 2 + 'px', height: maxSize * 2 + 'px' }
+      ], { duration: 30000, easing: 'ease-out', fill: 'forwards' });
+
+      pinkOverlay.style.width = maxSize * 2 + 'px';
+      pinkOverlay.style.height = maxSize * 2 + 'px';
+
+      const wrapper = document.getElementById('dream-input-wrapper');
+      const textarea = document.getElementById('dream-textarea');
+      const overlay = document.getElementById('dream-textarea-overlay');
+      textarea.value = '';
+      textarea.classList.remove('active');
+      wrapper.style.display = 'flex';
+      wrapper.style.opacity = '0';
+      overlay.style.opacity = '0';
+      overlay.classList.remove('visible');
+      wrapper.animate([
+        { opacity: 0 },
+        { opacity: 1 }
+      ], { duration: 1200, delay: 800, fill: 'forwards' }).onfinish = () => {
+        wrapper.style.opacity = '1';
+        overlay.style.opacity = '1';
+        overlay.classList.add('visible');
+      };
+      let cursorShownOnce = false;
+      let audioTimerStarted = false;
+      const activateTextarea = () => {
+        if (textarea.readOnly) return;
+        overlay.classList.remove('visible');
+        textarea.classList.add('active');
+        textarea.focus();
+        cursorShownOnce = true;
+        if (!audioTimerStarted) {
+          audioTimerStarted = true;
+          setTimeout(() => {
+            const audio = document.getElementById('dream-audio');
+            if (audio) audio.play().catch(() => {});
+          }, 12000);
+        }
+      };
+      overlay.addEventListener('click', activateTextarea);
+      overlay.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        activateTextarea();
+      }, { passive: false });
+      let firstCharTriggered = false;
+      textarea.addEventListener('input', () => {
+        if (textarea.value.length > 0) {
+          textarea.classList.add('cursor-hidden');
+        }
+        if (textarea.value.length === 1 && !firstCharTriggered) {
+          firstCharTriggered = true;
+          let step = 0;
+          const featherSteps = setInterval(() => {
+            step++;
+            const newInterval = Math.max(1250, 2500 - step * 125);
+            updateFeatherInterval(newInterval);
+            if (step >= 10) clearInterval(featherSteps);
+          }, 2000);
+          setTimeout(() => {
+            pinkOverlay.animate([
+              { opacity: 0 },
+              { opacity: 1 }
+            ], { duration: 15000, easing: 'ease-in-out', fill: 'forwards' });
+          }, 30000);
+        }
+      });
+      textarea.addEventListener('blur', () => {
+        if (!textarea.readOnly) {
+          textarea.classList.remove('active');
+          overlay.classList.add('visible');
+          cursorShownOnce = false;
+        }
+      });
+    }
+
+    // ========== メインタイムライン ==========
+    function tick(timestamp) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) / 1000;
+
+      // 0-55秒: 夢のなかで（星空→朝焼け）、55秒で夢見ごこちでへ
+      // 55-115秒: 夢見ごこちで（天使の羽1分間）
+      // 115秒〜: 問いかけ表示
+
+      const progressIntro = Math.min(elapsed / DURATION_INTRO, 1);
+      const inDreamScene = elapsed >= DURATION_INTRO;
+      const featherElapsed = Math.max(0, elapsed - DURATION_INTRO);
+      const progressTotal = Math.min(elapsed / DURATION_TOTAL, 1);
+
+      document.getElementById('progress').style.width = (progressTotal * 100) + '%';
+
+      // 夢のなかで（最初）: 天使の羽なし
+      // 夢見ごこちでに変わるところから: 天使の羽スタート
+      if (inDreamScene && !window.feathersStarted) {
+        window.feathersStarted = true;
+        startFeathers();
+      }
+
+      if (!inDreamScene) {
+        // 0-55秒: 星空→朝焼け
+        if (progressIntro < 0.75) {
+          document.getElementById('sunrise-overlay').style.opacity = 0;
+          document.getElementById('dream-scene').style.opacity = 0;
+          document.getElementById('dream-text').style.opacity = 0;
+          document.getElementById('title').style.color = 'rgba(255,255,255,0.9)';
+        } else {
+          const sunriseProgress = (progressIntro - 0.75) / 0.25;
+          document.getElementById('sunrise-overlay').style.opacity = sunriseProgress;
+          document.getElementById('dream-scene').style.opacity = 0;
+          document.getElementById('dream-text').style.opacity = sunriseProgress * 0.9;
+          document.getElementById('title').style.color = `rgba(100, 130, 180, ${0.6 + sunriseProgress * 0.4})`;
+        }
+        document.getElementById('stars-canvas').style.opacity = 1;
+      } else {
+        // 夢見ごこちで: 明るい青い背景
+        const dreamFadeIn = Math.min(featherElapsed / 3, 1);
+        document.getElementById('sunrise-overlay').style.opacity = 0;
+        document.getElementById('dream-scene').style.opacity = dreamFadeIn;
+        document.getElementById('stars-canvas').style.opacity = 1 - dreamFadeIn;
+        document.getElementById('dream-text').style.opacity = dreamFadeIn;
+        document.getElementById('title').style.color = 'rgba(60, 90, 130, 0.95)';
+        document.getElementById('title').style.opacity = 0.8;
+      }
+
+      drawSky();
+
+      if (elapsed < DURATION_TOTAL) {
+        animationId = requestAnimationFrame(tick);
+      } else {
+        clearInterval(shootingStarInterval);
+        document.getElementById('dream-text').style.opacity = '0';
+        document.getElementById('title').style.opacity = '0';
+        showQuestionCharByChar();
+      }
+    }
+
+    // ========== 開始 ==========
+    window.addEventListener('resize', resize);
+    resize();
+    startShootingStars();
+    animationId = requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
