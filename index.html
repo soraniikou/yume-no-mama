@@ -321,6 +321,18 @@
     const DURATION_TOTAL = DURATION_INTRO + DURATION_FEATHERS;
     let startTime = null;
     let animationId = null;
+// 画面をクリックして20秒後に声を届ける
+document.addEventListener('click', () => {
+  const audio = document.getElementById('dream-audio');
+  
+  // 20000ミリ秒（20秒）待ってから再生
+  setTimeout(() => {
+    if (audio && audio.paused) {
+      audio.play();
+    }
+  }, 20000); 
+
+}, { once: true });
 
     // ========== 星空・星座の描画 ==========
     const canvas = document.getElementById('stars-canvas');
