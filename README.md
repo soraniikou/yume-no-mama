@@ -1,5 +1,9 @@
-　　　　　🌃夢のなかで　3分間だけでも　
-     夢見ごこちでいられたら
+　　　　Inspiration & Sound
+This app was inspired by the world of Kenshi Yonezu.
+You can listen to the concept a cappella vocal here:
+🎧 Listen to the A cappella on 
+https://stand.fm/episodes/69dca836a3cd112547af13a9
+(Unofficial Cover）
   
   ずっと夢のなかで生きることができたらいいのに
   そんな思いから作った3分間アプリ
