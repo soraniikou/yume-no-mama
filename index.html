@@ -337,23 +337,60 @@
     const canvas = document.getElementById('stars-canvas');
     const ctx = canvas.getContext('2d');
     let stars = [];
-    const constellations = [
-      { stars: [[0.2, 0.15], [0.25, 0.2], [0.3, 0.18], [0.28, 0.25], [0.22, 0.22]], name: 'オリオン' },
-      { stars: [[0.6, 0.2], [0.65, 0.25], [0.7, 0.22], [0.68, 0.28]], name: 'カシオペア' },
-      { stars: [[0.4, 0.35], [0.45, 0.4], [0.5, 0.38], [0.48, 0.45]], name: '北斗七星' },
-      { stars: [[0.75, 0.4], [0.8, 0.45], [0.85, 0.42]], name: '夏の大三角' },
-    ];
+    const orionStars = [[0.2, 0.15], [0.25, 0.2], [0.3, 0.18], [0.28, 0.25], [0.22, 0.22]];
+    const ORION_SHAPE_CENTER = [0.25, 0.2];
+    const ORION_SCALE = 1.5;
+    const ORION_ROTATION_PERIOD = 50;
+
+    function getOrionAnchorPx() {
+      return {
+        x: canvas.width / 2,
+        y: canvas.height / 2
+      };
+    }
+
+    function getOrionPoints(elapsed) {
+      const anchor = getOrionAnchorPx();
+      const angle = elapsed * (Math.PI * 2 / ORION_ROTATION_PERIOD);
+      return orionStars.map(([x, y]) => {
+        const lx = (x - ORION_SHAPE_CENTER[0]) * ORION_SCALE * canvas.width;
+        const ly = (y - ORION_SHAPE_CENTER[1]) * ORION_SCALE * canvas.height;
+        const rx = lx * Math.cos(angle) - ly * Math.sin(angle);
+        const ry = lx * Math.sin(angle) + ly * Math.cos(angle);
+        return [anchor.x + rx, anchor.y + ry];
+      });
+    }
+
+    function drawOrion(elapsed) {
+      const points = getOrionPoints(elapsed);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < points.length - 1; i++) {
+        const [x1, y1] = points[i];
+        const [x2, y2] = points[i + 1];
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+      points.forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fill();
+      });
+    }
 
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       initStars();
-      drawSky();
+      drawSky(0, introPhaseActive);
     }
 
     function initStars() {
       stars = [];
-      const count = Math.floor((canvas.width * canvas.height) / 2400);
+      const count = Math.floor((canvas.width * canvas.height) / 4800);
       for (let i = 0; i < count; i++) {
         stars.push({
           x: Math.random() * canvas.width,
@@ -365,7 +402,7 @@
       }
     }
 
-    function drawSky() {
+    function drawSky(elapsed = 0, showOrion = true) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const t = Date.now() / 1000;
 
@@ -378,25 +415,9 @@
         ctx.fill();
       });
 
-      // 星座（線でつなぐ）
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
-      ctx.lineWidth = 1;
-      constellations.forEach(c => {
-        for (let i = 0; i < c.stars.length - 1; i++) {
-          const [x1, y1] = c.stars[i];
-          const [x2, y2] = c.stars[i + 1];
-          ctx.beginPath();
-          ctx.moveTo(x1 * canvas.width, y1 * canvas.height);
-          ctx.lineTo(x2 * canvas.width, y2 * canvas.height);
-          ctx.stroke();
-        }
-        c.stars.forEach(([x, y]) => {
-          ctx.beginPath();
-          ctx.arc(x * canvas.width, y * canvas.height, 2, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(255,255,255,0.9)';
-          ctx.fill();
-        });
-      });
+      if (showOrion) {
+        drawOrion(elapsed);
+      }
     }
 
     // ========== 流れ星 ==========
@@ -751,7 +772,7 @@
         document.getElementById('title').style.opacity = 0.8;
       }
 
-      drawSky();
+      drawSky(elapsed, !inDreamScene);
 
       if (elapsed < DURATION_TOTAL) {
         animationId = requestAnimationFrame(tick);
