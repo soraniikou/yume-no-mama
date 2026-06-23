@@ -69,7 +69,7 @@
     /* 流れ星 */
     .shooting-star {
       position: fixed;
-      width: 120px;
+      width: 420px;
       height: 2px;
       background: linear-gradient(90deg, rgba(255,255,255,0.9) 0%, transparent 100%);
       border-radius: 2px;
@@ -115,6 +115,9 @@
       text-shadow: 0 0 20px rgba(255,255,255,0.3);
       transition: color 30s ease, opacity 10s ease;
     }
+    .title.title-initial {
+      font-size: clamp(1.215rem, 3.24vw, 2.025rem);
+    }
 
     .dream-text {
       position: fixed;
@@ -143,6 +146,14 @@
       opacity: 0;
       text-align: center;
       line-height: 1.8;
+    }
+    @media (max-width: 767px) {
+      .final-question {
+        white-space: nowrap;
+        font-size: clamp(0.85rem, 3.8vw, 1.15rem);
+        letter-spacing: 0.06em;
+        line-height: 1.4;
+      }
     }
 
     /* tapして サイン（非表示からスタート、2秒後にfadeIn） */
@@ -386,7 +397,9 @@
     }
 
     // ========== 流れ星 ==========
-    function createShootingStar() {
+    let introPhaseActive = true;
+
+    function createShootingStarClassic() {
       const el = document.createElement('div');
       el.className = 'shooting-star';
       const angle = -30 - Math.random() * 20;
@@ -402,6 +415,73 @@
         { opacity: 1 },
         { opacity: 0, transform: `rotate(${angle}deg) translateX(400px)` }
       ], { duration: 3600, easing: 'ease-out' }).onfinish = () => el.remove();
+    }
+
+    function createShootingStarIntro() {
+      const el = document.createElement('div');
+      el.className = 'shooting-star';
+      const variant = Math.floor(Math.random() * 4);
+      let angle, startX, startY, endX, endY, gradient, origin;
+
+      switch (variant) {
+        case 0:
+          angle = -30 - Math.random() * 25;
+          startX = Math.random() * 100 - 15;
+          startY = Math.random() * 35;
+          endX = 350 + Math.random() * 100;
+          endY = 120 + Math.random() * 80;
+          gradient = 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, transparent 100%)';
+          origin = 'left center';
+          break;
+        case 1:
+          angle = 25 + Math.random() * 25;
+          startX = 55 + Math.random() * 55;
+          startY = Math.random() * 35;
+          endX = -(350 + Math.random() * 100);
+          endY = 120 + Math.random() * 80;
+          gradient = 'linear-gradient(270deg, rgba(255,255,255,0.9) 0%, transparent 100%)';
+          origin = 'right center';
+          break;
+        case 2:
+          angle = 5 + Math.random() * 25;
+          startX = -5 + Math.random() * 15;
+          startY = 15 + Math.random() * 50;
+          endX = 350 + Math.random() * 150;
+          endY = 80 + Math.random() * 120;
+          gradient = 'linear-gradient(90deg, rgba(255,255,255,0.9) 0%, transparent 100%)';
+          origin = 'left center';
+          break;
+        default:
+          angle = -(145 + Math.random() * 25);
+          startX = 85 + Math.random() * 20;
+          startY = 15 + Math.random() * 50;
+          endX = -(350 + Math.random() * 150);
+          endY = 80 + Math.random() * 120;
+          gradient = 'linear-gradient(270deg, rgba(255,255,255,0.9) 0%, transparent 100%)';
+          origin = 'right center';
+          break;
+      }
+
+      el.style.background = gradient;
+      el.style.transformOrigin = origin;
+      el.style.left = startX + '%';
+      el.style.top = startY + '%';
+      el.style.transform = `rotate(${angle}deg)`;
+      document.body.appendChild(el);
+
+      el.animate([
+        { opacity: 0 },
+        { opacity: 1 },
+        { opacity: 0, transform: `rotate(${angle}deg) translate(${endX}px, ${endY}px)` }
+      ], { duration: 3600, easing: 'ease-out' }).onfinish = () => el.remove();
+    }
+
+    function createShootingStar() {
+      if (introPhaseActive) {
+        createShootingStarIntro();
+      } else {
+        createShootingStarClassic();
+      }
     }
 
     let shootingStarInterval;
@@ -444,7 +524,9 @@
 
     // ========== 1文字ずつ表示 → tapして表示 ==========
     function showQuestionCharByChar() {
-      const text = 'どんな夢の中で生きたい？';
+      const text = window.matchMedia('(max-width: 767px)').matches
+        ? 'どんな夢で生きたい？'
+        : 'どんな夢の中で生きたい？';
       const el = document.getElementById('final-question');
       const tapHint = document.getElementById('tap-hint');
       document.getElementById('progress').parentElement.style.opacity = '0';
@@ -619,21 +701,24 @@
       }
 
       if (!inDreamScene) {
+        document.getElementById('title').classList.add('title-initial');
         // 0-55秒: 星空→朝焼け
         if (progressIntro < 0.75) {
           document.getElementById('sunrise-overlay').style.opacity = 0;
           document.getElementById('dream-scene').style.opacity = 0;
           document.getElementById('dream-text').style.opacity = 0;
-          document.getElementById('title').style.color = 'rgba(255,255,255,0.9)';
+          document.getElementById('title').style.color = 'rgba(110, 115, 135, 0.75)';
         } else {
           const sunriseProgress = (progressIntro - 0.75) / 0.25;
           document.getElementById('sunrise-overlay').style.opacity = sunriseProgress;
           document.getElementById('dream-scene').style.opacity = 0;
           document.getElementById('dream-text').style.opacity = sunriseProgress * 0.9;
-          document.getElementById('title').style.color = `rgba(100, 130, 180, ${0.6 + sunriseProgress * 0.4})`;
+          document.getElementById('title').style.color = `rgba(80, 105, 150, ${0.5 + sunriseProgress * 0.35})`;
         }
         document.getElementById('stars-canvas').style.opacity = 1;
       } else {
+        if (introPhaseActive) introPhaseActive = false;
+        document.getElementById('title').classList.remove('title-initial');
         // 夢見ごこちで: 明るい青い背景
         const dreamFadeIn = Math.min(featherElapsed / 3, 1);
         document.getElementById('sunrise-overlay').style.opacity = 0;
