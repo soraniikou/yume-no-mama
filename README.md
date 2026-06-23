@@ -26,4 +26,27 @@
   アプリ体験
   
   https://yume-no-mama.vercel.app
+
+  個人情報の安全性について
+  
+このアプリはデータを一切保存しません。
+テキストエリアに書いた夢の言葉は、あなたのブラウザの中だけに存在します。サーバーへの送信も、データベースへの記録も、外部サービスへの共有も行われません。ページを閉じた瞬間、すべて消えます。
+
+
+This app stores no data whatsoever.
+Whatever dream words you write in the text area exist only inside your browser. Nothing is sent to a server, saved to a database, or shared with any external service. The moment you close the page, everything disappears.
+This reflects the app's core design philosophy: zero data storage as sanctuary — no evaluation, no records, just a quiet place to exist.
+まとめ / Summary
+項目
+状態
+サーバー送信
+❌ なし
+データベース保存
+❌ なし
+Cookie / トラッキング
+❌ なし
+外部API連携
+❌ なし
+ページを閉じたら
+✅ 完全消去
   
