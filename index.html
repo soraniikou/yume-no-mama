@@ -554,7 +554,7 @@
     }
 
     let featherInterval;
-    let featherIntervalMs = 2500;
+    let featherIntervalMs = 7500;
     function startFeathers() {
       createFeather();
       featherInterval = setInterval(createFeather, featherIntervalMs);
@@ -705,7 +705,7 @@
           let step = 0;
           const featherSteps = setInterval(() => {
             step++;
-            const newInterval = Math.max(1250, 2500 - step * 125);
+            const newInterval = Math.max(3750, 7500 - step * 375);
             updateFeatherInterval(newInterval);
             if (step >= 10) clearInterval(featherSteps);
           }, 2000);
