@@ -108,8 +108,8 @@
       top: 15%;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(1.5rem, 4vw, 2.5rem);
-      color: rgba(255,255,255,0.9);
+      font-size: clamp(1.35rem, 3.6vw, 2.25rem);
+      color: rgba(180,180,200,0.7);
       letter-spacing: 0.3em;
       z-index: 5;
       text-shadow: 0 0 20px rgba(255,255,255,0.3);
@@ -121,11 +121,12 @@
       bottom: 25%;
       left: 50%;
       transform: translateX(-50%);
-      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      font-size: clamp(0.9rem, 2.25vw, 1.26rem);
       color: rgba(80, 100, 140, 0.95);
       letter-spacing: 0.2em;
       z-index: 5;
       opacity: 0;
+      display: none;
       text-shadow: 0 2px 10px rgba(255, 255, 255, 0.5);
     }
 
@@ -299,12 +300,9 @@
   <canvas id="stars-canvas"></canvas>
 
   <h1 class="title" id="title">夢のなかで</h1>
-  <p class="dream-text" id="dream-text">夢見ごこちで</p>
+  <p class="dream-text" id="dream-text"></p>
   <p class="final-question" id="final-question"></p>
   <p class="tap-hint" id="tap-hint">tapして</p>
-  <audio id="dream-audio" preload="auto">
-    <source src="dream-voice.m4a" type="audio/mp4">
-  </audio>
   <div class="dream-input-wrapper" id="dream-input-wrapper">
     <textarea id="dream-textarea" placeholder="夢を書いて..."></textarea>
     <p class="dream-input-hint" id="dream-input-hint">クリックすると夢を書けます</p>
@@ -316,24 +314,11 @@
   </div>
 
   <script>
-    const DURATION_INTRO = 55;      // 夢のなかで→夢見ごこちでまで
+    const DURATION_INTRO = 45;      // 夢のなかで→夢見ごこちでまで
     const DURATION_FEATHERS = 60;   // 天使の羽が舞い落ちる1分間
     const DURATION_TOTAL = DURATION_INTRO + DURATION_FEATHERS;
     let startTime = null;
     let animationId = null;
-// 画面をクリックして20秒後に声を届ける
-document.addEventListener('click', () => {
-  const audio = document.getElementById('dream-audio');
-  
-  // 20000ミリ秒（20秒）待ってから再生
-  setTimeout(() => {
-    if (audio && audio.paused) {
-      audio.play();
-    }
-  }, 20000); 
-
-}, { once: true });
-
     // ========== 星空・星座の描画 ==========
     const canvas = document.getElementById('stars-canvas');
     const ctx = canvas.getContext('2d');
@@ -354,7 +339,7 @@ document.addEventListener('click', () => {
 
     function initStars() {
       stars = [];
-      const count = Math.floor((canvas.width * canvas.height) / 800);
+      const count = Math.floor((canvas.width * canvas.height) / 2400);
       for (let i = 0; i < count; i++) {
         stars.push({
           x: Math.random() * canvas.width,
@@ -533,8 +518,9 @@ document.addEventListener('click', () => {
       const wrapper = document.getElementById('dream-input-wrapper');
       const textarea = document.getElementById('dream-textarea');
       const overlay = document.getElementById('dream-textarea-overlay');
+      const inputHint = document.getElementById('dream-input-hint');
       textarea.value = '';
-      textarea.classList.remove('active');
+      textarea.classList.remove('active', 'cursor-hidden');
       wrapper.style.display = 'flex';
       wrapper.style.opacity = '0';
       overlay.style.opacity = '0';
@@ -546,23 +532,36 @@ document.addEventListener('click', () => {
         wrapper.style.opacity = '1';
         overlay.style.opacity = '1';
         overlay.classList.add('visible');
+        syncTextareaOverlay();
       };
-      let cursorShownOnce = false;
-      let audioTimerStarted = false;
+
+      function syncTextareaOverlay() {
+        overlay.style.height = textarea.offsetHeight + 'px';
+        inputHint.textContent = textarea.value.length > 0
+          ? 'クリックして書き直す'
+          : 'クリックすると夢を書けます';
+      }
+
       const activateTextarea = () => {
-        if (textarea.readOnly) return;
         overlay.classList.remove('visible');
+        textarea.classList.remove('cursor-hidden');
         textarea.classList.add('active');
         textarea.focus();
-        cursorShownOnce = true;
-        if (!audioTimerStarted) {
-          audioTimerStarted = true;
-          setTimeout(() => {
-            const audio = document.getElementById('dream-audio');
-            if (audio) audio.play().catch(() => {});
-          }, 12000);
-        }
+        const len = textarea.value.length;
+        textarea.setSelectionRange(len, len);
       };
+
+      const finishTextareaEditing = () => {
+        textarea.classList.remove('active');
+        if (textarea.value.length > 0) {
+          textarea.classList.add('cursor-hidden');
+        } else {
+          textarea.classList.remove('cursor-hidden');
+        }
+        syncTextareaOverlay();
+        overlay.classList.add('visible');
+      };
+
       overlay.addEventListener('click', activateTextarea);
       overlay.addEventListener('touchend', (e) => {
         e.preventDefault();
@@ -570,8 +569,11 @@ document.addEventListener('click', () => {
       }, { passive: false });
       let firstCharTriggered = false;
       textarea.addEventListener('input', () => {
+        syncTextareaOverlay();
         if (textarea.value.length > 0) {
           textarea.classList.add('cursor-hidden');
+        } else {
+          textarea.classList.remove('cursor-hidden');
         }
         if (textarea.value.length === 1 && !firstCharTriggered) {
           firstCharTriggered = true;
@@ -590,13 +592,7 @@ document.addEventListener('click', () => {
           }, 30000);
         }
       });
-      textarea.addEventListener('blur', () => {
-        if (!textarea.readOnly) {
-          textarea.classList.remove('active');
-          overlay.classList.add('visible');
-          cursorShownOnce = false;
-        }
-      });
+      textarea.addEventListener('blur', finishTextareaEditing);
     }
 
     // ========== メインタイムライン ==========
