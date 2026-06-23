@@ -39,17 +39,16 @@
       z-index: 2;
     }
 
-    /* 夢見ごこちでシーン（写真のように明るい青い空） */
+    /* 夢見ごこちでシーン（深い紺青） */
     #dream-scene {
       position: fixed;
       inset: 0;
       background: linear-gradient(
         to bottom,
-        #87CEEB 0%,
-        #B0E0E6 30%,
-        #ADD8E6 60%,
-        rgba(180, 200, 230, 0.95) 85%,
-        rgba(200, 210, 240, 0.9) 100%
+        #0d1b3e 0%,
+        #0a1628 45%,
+        #081220 75%,
+        #060d18 100%
       );
       opacity: 0;
       pointer-events: none;
@@ -79,27 +78,31 @@
       box-shadow: 0 0 8px 2px rgba(255,255,255,0.5);
     }
 
-    /* 天使の羽（ぼかし） */
+    /* 天使の羽 */
     .feather {
       position: fixed;
-      width: 24px;
-      height: 48px;
-      background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,248,240,0.8) 50%, rgba(255,255,255,0.4) 100%);
-      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      transform-origin: center bottom;
+      width: 12px;
+      height: 24px;
+      background: linear-gradient(
+        160deg,
+        rgba(195, 190, 180, 0.72) 0%,
+        rgba(175, 165, 145, 0.65) 45%,
+        rgba(155, 140, 115, 0.58) 100%
+      );
+      border-radius: 60% 40% 60% 40% / 70% 70% 30% 30%;
+      transform-origin: center center;
       opacity: 0;
       z-index: 4;
-      filter: blur(4px) drop-shadow(0 2px 4px rgba(0,0,0,0.08));
-      animation: feather-float 4s ease-in-out infinite;
+      filter: blur(2.5px) drop-shadow(0 1px 3px rgba(140, 130, 110, 0.25));
     }
     /* 夢を書くときの天使の羽（淡いピンク） */
     body.dream-writing .feather {
-      background: linear-gradient(135deg, rgba(255,230,240,0.95) 0%, rgba(255,200,220,0.85) 50%, rgba(255,180,200,0.6) 100%);
-    }
-
-    @keyframes feather-float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-8px) rotate(5deg); }
+      background: linear-gradient(
+        160deg,
+        rgba(255, 235, 245, 0.85) 0%,
+        rgba(255, 210, 225, 0.78) 50%,
+        rgba(255, 190, 210, 0.7) 100%
+      );
     }
 
     /* タイトル・テキスト */
@@ -252,7 +255,7 @@
       cursor: default;
     }
     #dream-textarea::placeholder {
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(130, 110, 168, 0.95);
     }
     #dream-textarea.active {
       pointer-events: auto;
@@ -264,7 +267,7 @@
     .dream-input-hint {
       font-family: 'Shippori Mincho', serif;
       font-size: clamp(0.75rem, 1.8vw, 0.95rem);
-      color: rgba(255, 255, 255, 0.7);
+      color: rgba(120, 100, 158, 0.92);
       letter-spacing: 0.1em;
     }
     #dream-textarea-overlay {
@@ -496,18 +499,37 @@
       f.className = 'feather';
       const startX = 10 + Math.random() * 80;
       f.style.left = startX + '%';
-      f.style.top = '-60px';
-      f.style.transform = `rotate(${Math.random() * 360}deg)`;
-      f.style.animationDelay = (Math.random() * 2) + 's';
+      f.style.top = '-30px';
+
+      const targetY = 105 + Math.random() * 10;
+      const drift = (Math.random() - 0.5) * 15;
+      const swayAmp = 2 + Math.random() * 4;
+      const swayFreq = 2 + Math.random() * 2;
+      const duration = (4000 + Math.random() * 3000) * 6;
+      const startRot = Math.random() * 360;
+      const endRot = startRot + (Math.random() - 0.5) * 120;
+      const featherOpacity = 0.55 + Math.random() * 0.12;
       document.body.appendChild(f);
 
-      const targetY = 25 + Math.random() * 55;
-      const drift = (Math.random() - 0.5) * 25;
-      const duration = 4000 + Math.random() * 3000;
-      f.animate([
-        { transform: `translate(0, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 },
-        { transform: `translate(${drift}vw, ${targetY}vh) rotate(${(Math.random() - 0.5) * 200}deg)`, opacity: 0.7 }
-      ], { duration, easing: 'ease-out', fill: 'forwards' }).onfinish = () => f.remove();
+      const steps = 32;
+      const keyframes = [{ transform: `translate(0, 0) rotate(${startRot}deg)`, opacity: 0 }];
+      for (let i = 1; i <= steps; i++) {
+        const t = i / steps;
+        const y = targetY * t;
+        const x = drift * t + swayAmp * Math.sin(t * Math.PI * 2 * swayFreq);
+        const rot = startRot + (endRot - startRot) * t + 12 * Math.sin(t * Math.PI * 2 * swayFreq);
+        let opacity;
+        if (t <= 0.08) opacity = (t / 0.08) * featherOpacity;
+        else if (t >= 0.9) opacity = featherOpacity * (1 - (t - 0.9) / 0.1);
+        else opacity = featherOpacity;
+        keyframes.push({
+          transform: `translate(${x}vw, ${y}vh) rotate(${rot}deg)`,
+          opacity,
+          offset: t
+        });
+      }
+
+      f.animate(keyframes, { duration, easing: 'linear', fill: 'forwards' }).onfinish = () => f.remove();
     }
 
     let featherInterval;
