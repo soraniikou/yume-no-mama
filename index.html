@@ -310,9 +310,25 @@
       width: 0%;
       transition: width 1s linear;
     }
+
+    .close-btn {
+      position: fixed;
+      top: 12px;
+      right: 14px;
+      z-index: 20;
+      padding: 4px 8px;
+      font-family: 'Shippori Mincho', serif;
+      font-size: clamp(0.65rem, 1.6vw, 0.8rem);
+      color: rgba(255, 255, 255, 0.3);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+    }
   </style>
 </head>
 <body>
+  <button type="button" class="close-btn" id="close-btn" onclick="window.close()">閉じる</button>
   <div id="sky"></div>
   <div id="sunrise-overlay"></div>
   <div id="dream-scene"></div>
