@@ -13,6 +13,10 @@
   ![2](./スクリーンショット%202026-03-15%20054712.png)
   <img src="yumeno1.png" width="100%" alt="yumeno1">
 
+<img src="yumeno4.png" width="100%" alt="yumeno4">
+
+
+
   
 
   3.あなたは　どんな夢の中で生きたい？
